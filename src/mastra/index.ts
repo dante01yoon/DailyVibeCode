@@ -9,6 +9,13 @@ import { z } from "zod";
 
 import { sharedPostgresStorage } from "./storage";
 import { inngest, inngestServe } from "./inngest";
+import { koreanNewsletterAgent } from "./agents/koreanNewsletterAgent";
+import { telegramNewsletterWorkflow } from "./workflows/telegramNewsletterWorkflow";
+import { registerTelegramTrigger } from "../triggers/telegramTriggers";
+import { hackerNewsTool } from "./tools/hackerNewsTool";
+import { githubTrendingTool } from "./tools/githubTrendingTool";
+import { devTipsTool } from "./tools/devTipsTool";
+import { format } from "node:util";
 
 class ProductionPinoLogger extends MastraLogger {
   protected logger: pino.Logger;
@@ -53,13 +60,17 @@ class ProductionPinoLogger extends MastraLogger {
 
 export const mastra = new Mastra({
   storage: sharedPostgresStorage,
-  agents: {},
-  workflows: {},
+  agents: { koreanNewsletterAgent },
+  workflows: { telegramNewsletterWorkflow },
   mcpServers: {
     allTools: new MCPServer({
       name: "allTools",
       version: "1.0.0",
-      tools: {},
+      tools: {
+        hackerNewsTool,
+        githubTrendingTool,
+        devTipsTool,
+      },
     }),
   },
   bundler: {
@@ -122,6 +133,31 @@ export const mastra = new Mastra({
         // 3. Establishing a publish-subscribe system for real-time monitoring
         //    through the workflow:${workflowId}:${runId} channel
       },
+      ...registerTelegramTrigger({
+        triggerType: "telegram/message",
+        handler: async (mastra, triggerInfo) => {
+          const logger = mastra.getLogger();
+          logger?.info("📝 [Telegram Trigger] 텔레그램 메시지 수신:", { triggerInfo });
+          
+          try {
+            // 텔레그램 봇은 모든 메시지에 응답하도록 설정
+            const chatId = triggerInfo.payload.message?.chat?.id;
+            const run = await mastra.getWorkflow("telegramNewsletterWorkflow").createRunAsync();
+            await run.start({
+              inputData: {
+                message: JSON.stringify(triggerInfo.payload),
+                threadId: `telegram/${chatId}`,
+                chatId: String(chatId),
+              }
+            });
+            logger?.info("✅ [Telegram Trigger] 워크플로우 실행 완료");
+          } catch (error) {
+            logger?.error("❌ [Telegram Trigger] 워크플로우 실행 실패:", { 
+              error: error instanceof Error ? error.message : String(error) 
+            });
+          }
+        },
+      }),
     ],
   },
   logger:
