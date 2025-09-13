@@ -37,7 +37,7 @@ export const koreanNewsletterAgent = new Agent({
 
 사용자가 뉴스레터를 요청하면, 먼저 모든 도구를 사용하여 최신 정보를 수집한 다음, 이를 바탕으로 완성도 높은 한국어 뉴스레터를 작성해주세요.`,
   
-  model: openai.responses("gpt-5"),
+  model: openai.responses("gpt-4o-mini"),
   
   tools: {
     hackerNewsTool,

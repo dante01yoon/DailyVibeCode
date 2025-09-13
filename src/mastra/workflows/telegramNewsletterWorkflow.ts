@@ -29,7 +29,7 @@ const useAgentStep = createStep({
     ], {
       resourceId: "bot",
       threadId: inputData.threadId,
-      maxSteps: 8, // Allow multiple tool calls
+      maxSteps: 5, // Allow multiple tool calls
     });
     
     logger?.info("✅ [Workflow] 뉴스레터 생성 완료");
