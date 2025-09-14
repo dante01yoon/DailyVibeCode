@@ -1,7 +1,24 @@
 import { PostgresStore } from "@mastra/pg";
+import { LibSQLStore } from "@mastra/libsql";
 
-// Create a single shared PostgreSQL storage instance
-export const sharedPostgresStorage = new PostgresStore({
-  connectionString:
-    process.env.DATABASE_URL || "postgresql://localhost:5432/mastra",
-});
+// Choose storage based on DATABASE_URL. Defaults to local file-based LibSQL.
+// - postgres*: use PostgresStore
+// - libsql:, file:, :memory: use LibSQLStore
+const dbUrl = process.env.DATABASE_URL;
+
+function createStorage() {
+  if (dbUrl && /^postgres/i.test(dbUrl)) {
+    console.log('postgresstore: ', new PostgresStore({ connectionString: dbUrl }));
+    return new PostgresStore({ connectionString: dbUrl });
+  }
+  if (dbUrl) {
+    return new LibSQLStore({
+      url: dbUrl,
+      authToken: process.env.DATABASE_AUTH_TOKEN,
+    });
+  }
+  // Fallback for local dev: persist to project-local file
+  return new LibSQLStore({ url: "file:.local/mastra.db" });
+}
+
+export const sharedStorage = createStorage();
