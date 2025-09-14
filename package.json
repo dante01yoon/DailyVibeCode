@@ -14,6 +14,7 @@
     "db:status": "docker compose ps",
     "build": "mastra build",
     "start": "NODE_ENV=production node .mastra/output/index.mjs",
+    "start:inngest": "NODE_ENV=production node scripts/start-with-inngest.mjs",
     "check": "tsc",
     "check:format": "prettier --check '**/*.ts'",
     "format": "prettier --write '**/*.ts'"

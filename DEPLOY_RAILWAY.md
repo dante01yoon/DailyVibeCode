@@ -37,6 +37,39 @@ Database:
 2. Check logs; confirm the app is listening on the assigned `$PORT`.
 3. Health check: `curl https://<service>.up.railway.app/healthz`
 
+## 4.1) Inngest Cloud Keys (Production)
+The production build uses Inngest to run workflows. In production, you must provide Inngest keys so events can be sent and verified.
+
+- Get keys from Inngest Cloud:
+  - Sign in at https://app.inngest.com
+  - Create an App (or use an existing one) and select an Environment (e.g., `production`).
+  - From the Environment → Settings/Keys:
+    - Copy the Event Key
+    - Copy the Signing Key
+- Set these in Railway (Service → Variables):
+  - `INNGEST_EVENT_KEY=<paste-event-key>`
+  - `INNGEST_SIGNING_KEY=<paste-signing-key>`
+- Redeploy. The error “Failed to send event… We couldn't find an event key” will disappear once `INNGEST_EVENT_KEY` is set.
+- Optional: If workflows don’t start after events are sent, make sure Inngest Cloud can reach your app. Set
+  - `INNGEST_SERVE_HOST=https://<your-domain>` (e.g., `https://dailyvibecode-production.up.railway.app`)
+  and let us know to wire this env into the server config if needed.
+
+## 4.2) Run Inngest locally on Railway (no Cloud)
+If you don’t want to use Inngest Cloud, you can run the Inngest dev server as a sidecar inside your Railway service.
+
+- What this does: Your app runs normally on `$PORT`, and an internal Inngest dev server runs on `127.0.0.1:3000`. The app talks to it via `http://localhost:3000`.
+- Tradeoffs: The dev server is not a production-grade queue. It’s fine for small apps and demos, but not HA.
+
+Steps:
+1) Start command (Railway → Settings → Build & Start):
+   - Start: `npm run start:inngest`
+2) Env vars (Railway → Variables):
+   - `INNGEST_USE_DEV=true` (forces the app to use the local Inngest engine even in production)
+   - Optional: `INNGEST_BASE_URL=http://127.0.0.1:3000` (overrides the default dev URL)
+3) Deploy. Logs should show both “app” and “inngest” processes.
+
+You do NOT need `INNGEST_EVENT_KEY` when using the local dev engine.
+
 ## 5) Telegram Webhook
 After deploy, set the webhook to your Railway URL:
 

@@ -17,41 +17,42 @@ function withPrefix(stream, prefix, color = '\u001b[36m') {
     while ((idx = buf.indexOf('\n')) !== -1) {
       const line = buf.slice(0, idx);
       buf = buf.slice(idx + 1);
-      // eslint-disable-next-line no-console
       console.log(`${color}[${prefix}]\u001b[0m ${line}`);
     }
   });
 }
 
-// Default dev port aligns with package.json and code
-process.env.PORT = process.env.PORT || '5001';
+// Respect platform PORT; default for local fallback only
+process.env.PORT = process.env.PORT || '5000';
 
-// Start Mastra dev server (respect PORT from env if set)
-const mastra = run('bash', ['-lc', 'mastra dev']);
-withPrefix(mastra.stdout, 'mastra', '\u001b[35m');
-withPrefix(mastra.stderr, 'mastra', '\u001b[35m');
+// Force Inngest dev engine if desired (recommended when self-hosting on Railway)
+process.env.INNGEST_USE_DEV = process.env.INNGEST_USE_DEV || 'true';
 
-// Start Inngest dev server (dev proxy on :3000)
+// Start production app (built output)
+const app = run('node', ['.mastra/output/index.mjs']);
+withPrefix(app.stdout, 'app', '\u001b[35m');
+withPrefix(app.stderr, 'app', '\u001b[35m');
+
+// Start Inngest dev server sidecar on :3000
 const inngest = run('bash', ['-lc', './scripts/inngest.sh']);
 withPrefix(inngest.stdout, 'inngest', '\u001b[36m');
 withPrefix(inngest.stderr, 'inngest', '\u001b[36m');
 
 function shutdown(code = 0) {
-  try { mastra.kill('SIGINT'); } catch {}
+  try { app.kill('SIGINT'); } catch {}
   try { inngest.kill('SIGINT'); } catch {}
   setTimeout(() => process.exit(code), 200);
 }
 
-mastra.on('exit', (code) => {
-  // eslint-disable-next-line no-console
-  console.log(`mastra exited with code ${code}`);
+app.on('exit', (code) => {
+  console.log(`app exited with code ${code}`);
   shutdown(code ?? 0);
 });
 inngest.on('exit', (code) => {
-  // eslint-disable-next-line no-console
   console.log(`inngest exited with code ${code}`);
   shutdown(code ?? 0);
 });
 
 process.on('SIGINT', () => shutdown(0));
 process.on('SIGTERM', () => shutdown(0));
+

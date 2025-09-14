@@ -188,10 +188,22 @@ export const mastra = new Mastra({
             if (callbackQueryId) {
               try {
                 await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
-                  callback_query_id: callbackQueryId
-                });
-              } catch (e) {
-                logger?.warn("⚠️ [Telegram Trigger] answerCallbackQuery 실패", { error: e instanceof Error ? e.message : String(e) });
+                  callback_query_id: callbackQueryId,
+                }, { timeout: 5000 });
+              } catch (e: any) {
+                const status = e?.response?.status;
+                const tg = e?.response?.data;
+                const description = tg?.description;
+                const isIgnorable = status === 400 && typeof description === "string" && /query is too old|invalid/i.test(description);
+                // Log richer diagnostic; continue regardless so the workflow still runs.
+                logger?.[isIgnorable ? "info" : "warn"](
+                  "⚠️ [Telegram Trigger] answerCallbackQuery 실패",
+                  {
+                    status,
+                    description,
+                    error_code: tg?.error_code,
+                  },
+                );
               }
             }
 
