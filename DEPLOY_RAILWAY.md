@@ -9,7 +9,7 @@ This repo is pre-configured for Railway. Follow these steps to deploy and connec
 
 ## 2) Build & Start
 Already configured via `railway.json`:
-- Build: `NODE_ENV=development npm ci && npm run build`
+- Build: `NODE_ENV=development npm install && npm run build`
 - Start: `npm start`
 - Health: `GET /healthz`
 
