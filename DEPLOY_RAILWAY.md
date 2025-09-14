@@ -28,7 +28,9 @@ Optional:
 Database:
 - Attach Railway Postgres (recommended for persistence): `DATABASE_URL` auto-injected (starts with `postgres`)
 - Or use Turso/LibSQL: set `DATABASE_URL` and `DATABASE_AUTH_TOKEN`
-- With no DB env, the app uses a project-local file DB (`file:.local/mastra.db`) which is ephemeral on Railway
+- With no DB env, the app falls back to a local file DB at a writable path:
+  - Prefers `DATA_DIR` if set, else `/data` (Railway volume), else `.local`, else `/tmp`.
+  - Example: set `DATA_DIR=/data` in Railway if you attach a volume.
 
 ## 4) Deploy
 1. Connect the repo to Railway and deploy.
