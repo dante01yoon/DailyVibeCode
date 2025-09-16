@@ -4,8 +4,17 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "mastra dev",
+    "dev": "PORT=5001 mastra dev",
+    "dev:pg": "DATABASE_URL=postgresql://mastra:mastra@localhost:5432/mastra PORT=5001 mastra dev",
+    "dev:all": "node scripts/dev-all.mjs",
+    "inngest:dev": "bash ./scripts/inngest.sh",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:status": "docker compose ps",
     "build": "mastra build",
+    "start": "NODE_ENV=production node .mastra/output/index.mjs",
+    "start:inngest": "NODE_ENV=production node scripts/start-with-inngest.mjs",
     "check": "tsc",
     "check:format": "prettier --check '**/*.ts'",
     "format": "prettier --write '**/*.ts'"

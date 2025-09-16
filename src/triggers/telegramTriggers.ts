@@ -9,11 +9,11 @@ if (!process.env.TELEGRAM_BOT_TOKEN) {
   );
 }
 
-export type TriggerInfoTelegramOnNewMessage = {
-  type: "telegram/message";
+export type TriggerInfoTelegram = {
+  type: "telegram/message" | "telegram/callback";
   params: {
     userName: string;
-    message: string;
+    message: string; // text for message updates, callback_data for callback updates
   };
   payload: any;
 };
@@ -22,11 +22,8 @@ export function registerTelegramTrigger({
   triggerType,
   handler,
 }: {
-  triggerType: string;
-  handler: (
-    mastra: Mastra,
-    triggerInfo: TriggerInfoTelegramOnNewMessage,
-  ) => Promise<void>;
+  triggerType: string; // kept for compatibility; actual type is derived from payload
+  handler: (mastra: Mastra, triggerInfo: TriggerInfoTelegram) => Promise<void>;
 }) {
   return [
     registerApiRoute("/webhooks/telegram/action", {
@@ -39,14 +36,21 @@ export function registerTelegramTrigger({
 
           logger?.info("📝 [Telegram] payload", payload);
 
-          await handler(mastra, {
-            type: triggerType,
+          const isCallback = Boolean(payload?.callback_query);
+          const info: TriggerInfoTelegram = {
+            type: isCallback ? "telegram/callback" : "telegram/message",
             params: {
-              userName: payload.message.from.username,
-              message: payload.message.text,
+              userName: isCallback
+                ? payload.callback_query?.from?.username
+                : payload.message?.from?.username,
+              message: isCallback
+                ? payload.callback_query?.data
+                : payload.message?.text,
             },
             payload,
-          } as TriggerInfoTelegramOnNewMessage);
+          };
+
+          await handler(mastra, info);
 
           return c.text("OK", 200);
         } catch (error) {
